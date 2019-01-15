@@ -6,10 +6,7 @@ import android.widget.*
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.scowluga.android.retrofitpractice.model.NamedApiResource
-import com.scowluga.android.retrofitpractice.model.Pokemon
-import com.scowluga.android.retrofitpractice.model.PokemonType
-import com.scowluga.android.retrofitpractice.model.Type
+import com.scowluga.android.retrofitpractice.model.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -50,6 +47,20 @@ class MainActivity : AppCompatActivity() {
         PokeApiService.create()
     }
 
+
+
+    // effectiveness of the TypeRelations against a specific type
+    fun checkEffectiveness(dr: TypeRelations, type: PokemonType): Double {
+        if (dr.noDamageTo.any {it same type})
+            return 0.0
+        if (dr.halfDamageTo.any {it same type})
+            return 0.5
+        if (dr.doubleDamageTo.any {it same type})
+            return 2.0
+        return 1.0
+    }
+
+    infix fun Double.near(d: Double): Boolean = (this - d) < 0.001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,14 +110,26 @@ class MainActivity : AppCompatActivity() {
                                 return
                             }
 
-                            // You have types, and dr
-
-                            for (t1: PokemonType in types) {
-                                for (t2: NamedApiResource)
-
-                                    // omg to simplify life you could like add extensions 
+                            var multiplier = 1.0
+                            types.forEach {
+                                multiplier *= checkEffectiveness(dr, it)
                             }
 
+                            when {
+                                multiplier near 0.0 ->
+                                    Toast.makeText(this@MainActivity, "Doesn't Effect", Toast.LENGTH_SHORT).show()
+                                multiplier near 0.25 ->
+                                    Toast.makeText(this@MainActivity, "x1/4", Toast.LENGTH_SHORT).show()
+                                multiplier near 0.5 ->
+                                    Toast.makeText(this@MainActivity, "x1/2", Toast.LENGTH_SHORT).show()
+                                multiplier near 1.0 ->
+                                    Toast.makeText(this@MainActivity, "x1", Toast.LENGTH_SHORT).show()
+                                multiplier near 2.0 ->
+                                    Toast.makeText(this@MainActivity, "x2", Toast.LENGTH_SHORT).show()
+                                multiplier near 4.0 ->
+                                    Toast.makeText(this@MainActivity, "x4", Toast.LENGTH_SHORT).show()
+
+                            }
 
                         }
                     })

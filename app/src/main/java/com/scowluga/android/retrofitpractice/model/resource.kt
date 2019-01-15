@@ -14,7 +14,9 @@ data class NamedApiResource(
         val name: String,
         override val category: String,
         override val id: Int
-) : ResourceSummary
+) : ResourceSummary {
+    infix fun same (type: PokemonType): Boolean = (this == type.type)
+}
 
 interface ResourceSummaryList<out T : ResourceSummary> {
     val count: Int

@@ -1,8 +1,12 @@
 package com.scowluga.android.retrofitpractice
 
 import android.os.Bundle
+import android.os.Handler
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.widget.*
+import com.dd.processbutton.iml.ActionProcessButton
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -40,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Initializing Type AutoComplete
-        val typeTV: AutoCompleteTextView = findViewById(R.id.atv1)
+        val typeTV: TextInputAutoCompleteTextView = findViewById(R.id.atv1)
         val typeList = arrayOf(
                 "Normal", "Fire", "Fighting", "Water", "Flying", "Grass", "Poison",
                 "Electric", "Ground", "Psychic", "Rock", "Ice", "Bug", "Dragon",
@@ -58,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
 
         // Initializing Pokemon AutoComplete
-        val pokeTV: AutoCompleteTextView = findViewById(R.id.atv2)
+        val pokeTV: TextInputAutoCompleteTextView = findViewById(R.id.atv2)
 
         val c0 = pokeApiService.getAllPokemon()
         c0.enqueue(object: Callback<NamedApiResourceList> {
@@ -76,7 +80,7 @@ class MainActivity : AppCompatActivity() {
                 val pokeAdapter = ArrayAdapter<String> (
                         this@MainActivity,
                         android.R.layout.simple_dropdown_item_1line,
-                        pokeList.map { it.name }
+                        pokeList.map { it.name.capitalize() } // wow Kotlin is powerful
                 )
 
                 pokeTV.setAdapter(pokeAdapter)
@@ -84,8 +88,15 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        val btn: Button = findViewById(R.id.btn)
+        // Recycler View
+        val tv: TextView = findViewById(R.id.tv)
+
+        // Button
+        val btn: ActionProcessButton = findViewById(R.id.btn)
+        btn.setMode(ActionProcessButton.Mode.ENDLESS)
+
         btn.setOnClickListener {
+            btn.progress = 1
 
             val type0: String = typeTV.text.toString().toLowerCase()
             val pokemon0: String = pokeTV.text.toString().toLowerCase()
@@ -93,12 +104,14 @@ class MainActivity : AppCompatActivity() {
             val call1: Call<Pokemon> = pokeApiService.getPokemon(pokemon0)
             call1.enqueue(object : Callback<Pokemon> {
                 override fun onFailure(call: Call<Pokemon>?, t: Throwable?) {
+                    btn.progress = 0
                     Toast.makeText(this@MainActivity, "Failed to find pokemon", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onResponse(call: Call<Pokemon>?, response: Response<Pokemon>?) {
                     val types = response?.body()?.types
                     if (types == null) {
+                        btn.progress = 0
                         Toast.makeText(this@MainActivity, "Failed to find pokemon", Toast.LENGTH_SHORT).show()
                         return
                     }
@@ -106,37 +119,42 @@ class MainActivity : AppCompatActivity() {
                     val call2: Call<Type> = pokeApiService.getType(type0);
                     call2.enqueue(object : Callback<Type> {
                         override fun onFailure(call: Call<Type>?, t: Throwable?) {
+                            btn.progress = 0
                             Toast.makeText(this@MainActivity, "Failed to find type", Toast.LENGTH_SHORT).show()
                         }
 
                         override fun onResponse(call: Call<Type>?, response: Response<Type>?) {
                             val dr = response?.body()?.damageRelations
                             if (dr == null) {
+                                btn.progress = 0
                                 Toast.makeText(this@MainActivity, "Failed to find type", Toast.LENGTH_SHORT).show()
                                 return
                             }
+
+                            btn.progress = 100
+                            Handler().postDelayed ({
+                                btn.progress = 0
+                            }, 2000)
+
+                            // delay 3 seconds, then reset
 
                             var multiplier = 1.0
                             types.forEach {
                                 multiplier *= checkEffectiveness(dr, it)
                             }
 
-                            when {
-                                multiplier near 0.0 ->
-                                    Toast.makeText(this@MainActivity, "Doesn't Effect", Toast.LENGTH_SHORT).show()
-                                multiplier near 0.25 ->
-                                    Toast.makeText(this@MainActivity, "x1/4", Toast.LENGTH_SHORT).show()
-                                multiplier near 0.5 ->
-                                    Toast.makeText(this@MainActivity, "x1/2", Toast.LENGTH_SHORT).show()
-                                multiplier near 1.0 ->
-                                    Toast.makeText(this@MainActivity, "x1", Toast.LENGTH_SHORT).show()
-                                multiplier near 2.0 ->
-                                    Toast.makeText(this@MainActivity, "x2", Toast.LENGTH_SHORT).show()
-                                multiplier near 4.0 ->
-                                    Toast.makeText(this@MainActivity, "x4", Toast.LENGTH_SHORT).show()
+                            // Kotlin is great
+                            var s = "$pokemon0 ".capitalize() + when {
+                                multiplier near 0.0 -> "is not effected by"
+                                multiplier near 0.25 -> "takes x1/4 damage from"
+                                multiplier near 0.5 -> "takes x1/2 damage from"
+                                multiplier near 1.0 -> "takes normal damage from"
+                                multiplier near 2.0 -> "takes x2 damage from"
+                                multiplier near 4.0 -> "takes x4 damage from"
+                                else -> "takes ??? damage from"
+                            } + " " + "$type0".capitalize()
 
-                            }
-
+                            tv.setText(tv.text.toString() + "$s \n")
                         }
                     })
                 }

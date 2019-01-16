@@ -18,36 +18,9 @@ import retrofit2.http.Path
 
 class MainActivity : AppCompatActivity() {
 
-    interface PokeApiService {
-        companion object {
-            fun create(): PokeApiService {
-                val gson: Gson = GsonBuilder()
-                        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                        .create()
-
-                val retrofit: Retrofit = Retrofit.Builder()
-                        .addCallAdapterFactory(
-                                RxJava2CallAdapterFactory.create())
-                        .addConverterFactory(GsonConverterFactory.create(gson))
-                        .baseUrl("http://pokeapi.co/api/v2/")
-                        .build()
-                return retrofit.create(PokeApiService::class.java)
-            }
-        }
-
-        @GET("type/{type}/")
-        fun getType(@Path("type") type: String): Call<Type>
-
-        @GET("pokemon/{pokemon}/")
-        fun getPokemon(@Path("pokemon") pokemon: String): Call<Pokemon>
-
-    }
-
     val pokeApiService by lazy {
         PokeApiService.create()
     }
-
-
 
     // effectiveness of the TypeRelations against a specific type
     fun checkEffectiveness(dr: TypeRelations, type: PokemonType): Double {
@@ -66,23 +39,56 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val spinner: Spinner = findViewById(R.id.spinner)
-        val items = arrayOf(
+        // Initializing Type AutoComplete
+        val typeTV: AutoCompleteTextView = findViewById(R.id.atv1)
+        val typeList = arrayOf(
                 "Normal", "Fire", "Fighting", "Water", "Flying", "Grass", "Poison",
                 "Electric", "Ground", "Psychic", "Rock", "Ice", "Bug", "Dragon",
                 "Ghost", "Dark", "Steel", "Fairy"
         )
-        spinner.adapter = ArrayAdapter<String>(
-                this, android.R.layout.simple_spinner_dropdown_item, items)
+
+        val typeAdapter = ArrayAdapter<String> (
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                typeList
+        )
+
+        typeTV.setAdapter(typeAdapter)
+        typeTV.threshold = 1
 
 
-        val et: EditText = findViewById(R.id.et)
+        // Initializing Pokemon AutoComplete
+        val pokeTV: AutoCompleteTextView = findViewById(R.id.atv2)
+
+        val c0 = pokeApiService.getAllPokemon()
+        c0.enqueue(object: Callback<NamedApiResourceList> {
+            override fun onFailure(call: Call<NamedApiResourceList>?, t: Throwable?) {
+                Toast.makeText(this@MainActivity, "Failed to load Pokemon", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onResponse(call: Call<NamedApiResourceList>?, response: Response<NamedApiResourceList>?) {
+                val pokeList = response?.body()?.results
+                if (pokeList == null) {
+                    Toast.makeText(this@MainActivity, "Failed to load pokemon", Toast.LENGTH_SHORT).show()
+                    return
+                }
+
+                val pokeAdapter = ArrayAdapter<String> (
+                        this@MainActivity,
+                        android.R.layout.simple_dropdown_item_1line,
+                        pokeList.map { it.name }
+                )
+
+                pokeTV.setAdapter(pokeAdapter)
+                pokeTV.threshold = 1
+            }
+        })
 
         val btn: Button = findViewById(R.id.btn)
         btn.setOnClickListener {
 
-            val type0: String = spinner.selectedItem.toString()
-            val pokemon0: String = et.text.toString()
+            val type0: String = typeTV.text.toString().toLowerCase()
+            val pokemon0: String = pokeTV.text.toString().toLowerCase()
 
             val call1: Call<Pokemon> = pokeApiService.getPokemon(pokemon0)
             call1.enqueue(object : Callback<Pokemon> {

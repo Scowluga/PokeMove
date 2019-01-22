@@ -1,4 +1,4 @@
-package com.scowluga.android.retrofitpractice
+package com.scowluga.android.pokemon
 
 import org.junit.Test
 

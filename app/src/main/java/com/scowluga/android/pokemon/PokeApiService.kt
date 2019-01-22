@@ -1,9 +1,9 @@
-package com.scowluga.android.retrofitpractice
+package com.scowluga.android.pokemon
 
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.scowluga.android.retrofitpractice.model.*
+import com.scowluga.android.pokemon.model.*
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
@@ -34,6 +34,6 @@ interface PokeApiService {
     @GET("pokemon/{pokemon}/")
     fun getPokemon(@Path("pokemon") pokemon: String): Call<Pokemon>
 
-    @GET("pokemon/")
+    @GET("pokemon/?limit=10000000")
     fun getAllPokemon(): Call<NamedApiResourceList>
 }

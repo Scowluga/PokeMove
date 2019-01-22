@@ -1,4 +1,4 @@
-package com.scowluga.android.retrofitpractice.model
+package com.scowluga.android.pokemon.model
 
 interface ResourceSummary {
     val id: Int

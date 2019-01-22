@@ -1,4 +1,4 @@
-package com.scowluga.android.retrofitpractice.model
+package com.scowluga.android.pokemon.model
 
 import com.google.gson.annotations.SerializedName
 

@@ -1,42 +1,30 @@
-package com.scowluga.android.retrofitpractice
+package com.scowluga.android.pokemon
 
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.widget.*
 import com.dd.processbutton.iml.ActionProcessButton
-import com.google.gson.FieldNamingPolicy
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.scowluga.android.retrofitpractice.model.*
+import com.scowluga.android.pokemon.model.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Path
 
 class MainActivity : AppCompatActivity() {
 
-    val pokeApiService by lazy {
+    val pokeApiService by lazy { // Singleton design pattern
         PokeApiService.create()
     }
 
     // effectiveness of the TypeRelations against a specific type
-    fun checkEffectiveness(dr: TypeRelations, type: PokemonType): Double {
-        if (dr.noDamageTo.any {it same type})
-            return 0.0
-        if (dr.halfDamageTo.any {it same type})
-            return 0.5
-        if (dr.doubleDamageTo.any {it same type})
-            return 2.0
-        return 1.0
+    fun checkEffectiveness(dr: TypeRelations, type: PokemonType) = when {
+        dr.noDamageTo.any {it same type} -> 0.0
+        dr.halfDamageTo.any {it same type} -> 0.5
+        dr.doubleDamageTo.any {it same type} -> 2.0
+        else -> 1.0
     }
 
+    // epsilon check with an infix
     infix fun Double.near(d: Double): Boolean = (this - d) < 0.001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +76,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // Recycler View
+        // Display text
         val tv: TextView = findViewById(R.id.tv)
 
         // Button

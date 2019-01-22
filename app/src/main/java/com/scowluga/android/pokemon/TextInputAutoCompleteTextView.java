@@ -1,4 +1,4 @@
-package com.scowluga.android.retrofitpractice;
+package com.scowluga.android.pokemon;
 
 import android.content.Context;
 import android.support.design.widget.TextInputLayout;

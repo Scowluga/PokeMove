@@ -1,4 +1,4 @@
-package com.scowluga.android.retrofitpractice.model
+package com.scowluga.android.pokemon.model
 
 data class Description(
         val description: String,

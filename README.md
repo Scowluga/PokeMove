@@ -13,6 +13,6 @@ Kotlin is exactly as amazing as I thought it would be. Extensions, infixes, lamb
 
 Auto Complete Feature         |  Displayed Results
 :-------------------------:|:-------------------------:
-<img src="/screenshots/autofill.png" width="400"/>  |  <img src="/screenshots/result.png" width="400"/>
+<img src="/photos/autofill.png" width="400"/>  |  <img src="/photos/result.png" width="400"/>
 
 

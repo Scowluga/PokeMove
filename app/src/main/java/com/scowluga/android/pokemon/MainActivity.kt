@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
 
                             // Kotlin is great
                             var s = "$pokemon0 ".capitalize() + when {
-                                multiplier near 0.0 -> "is not effected by"
+                                multiplier near 0.0 -> "is not affected by"
                                 multiplier near 0.25 -> "takes x1/4 damage from"
                                 multiplier near 0.5 -> "takes x1/2 damage from"
                                 multiplier near 1.0 -> "takes normal damage from"

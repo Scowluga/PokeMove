@@ -6,9 +6,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/launcher_pokeball"
+        android:icon="@mipmap/launcher_fight"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/launcher_pokeball"
+        android:roundIcon="@mipmap/launcher_fight_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">

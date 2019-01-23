@@ -3,24 +3,32 @@ package com.scowluga.android.pokemon
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.widget.*
 import com.dd.processbutton.iml.ActionProcessButton
 import com.scowluga.android.pokemon.model.*
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.BiFunction
+import io.reactivex.schedulers.Schedulers
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
-    val pokeApiService by lazy { // Singleton design pattern
+    val pokeApiService by lazy {
+        // Singleton design pattern
         PokeApiService.create()
     }
 
     // effectiveness of the TypeRelations against a specific type
     fun checkEffectiveness(dr: TypeRelations, type: PokemonType) = when {
-        dr.noDamageTo.any {it same type} -> 0.0
-        dr.halfDamageTo.any {it same type} -> 0.5
-        dr.doubleDamageTo.any {it same type} -> 2.0
+        dr.noDamageTo.any { it same type } -> 0.0
+        dr.halfDamageTo.any { it same type } -> 0.5
+        dr.doubleDamageTo.any { it same type } -> 2.0
         else -> 1.0
     }
 
@@ -39,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 "Ghost", "Dark", "Steel", "Fairy"
         )
 
-        val typeAdapter = ArrayAdapter<String> (
+        val typeAdapter = ArrayAdapter<String>(
                 this,
                 android.R.layout.simple_dropdown_item_1line,
                 typeList
@@ -52,29 +60,37 @@ class MainActivity : AppCompatActivity() {
         // Initializing Pokemon AutoComplete
         val pokeTV: TextInputAutoCompleteTextView = findViewById(R.id.atv2)
 
-        val c0 = pokeApiService.getAllPokemon()
-        c0.enqueue(object: Callback<NamedApiResourceList> {
-            override fun onFailure(call: Call<NamedApiResourceList>?, t: Throwable?) {
-                Toast.makeText(this@MainActivity, "Failed to load Pokemon", Toast.LENGTH_SHORT).show()
-            }
+        pokeApiService.getAllPokemon()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map { it.results }
+                .subscribe(object : Observer<List<NamedApiResource>> {
+                    override fun onSubscribe(d: Disposable) {
+                        Log.d("TAG", "onSubscribe")
+                    }
 
-            override fun onResponse(call: Call<NamedApiResourceList>?, response: Response<NamedApiResourceList>?) {
-                val pokeList = response?.body()?.results
-                if (pokeList == null) {
-                    Toast.makeText(this@MainActivity, "Failed to load pokemon", Toast.LENGTH_SHORT).show()
-                    return
-                }
+                    override fun onError(e: Throwable) {
+                        Toast.makeText(this@MainActivity, "Failed to load Pokemon", Toast.LENGTH_SHORT).show()
+                        Log.d("TAG", "Search failed")
+                    }
 
-                val pokeAdapter = ArrayAdapter<String> (
-                        this@MainActivity,
-                        android.R.layout.simple_dropdown_item_1line,
-                        pokeList.map { it.name.capitalize() } // wow Kotlin is powerful
-                )
+                    override fun onComplete() {
+                        Log.d("TAG", "onComplete")
+                    }
 
-                pokeTV.setAdapter(pokeAdapter)
-                pokeTV.threshold = 1
-            }
-        })
+                    override fun onNext(t: List<NamedApiResource>) {
+
+                        val pokeAdapter = ArrayAdapter<String>(
+                                this@MainActivity,
+                                android.R.layout.simple_dropdown_item_1line,
+                                t.map { it.name.capitalize() } // wow Kotlin is powerful
+                        )
+
+                        pokeTV.setAdapter(pokeAdapter)
+                        pokeTV.threshold = 1
+                    }
+                })
+
 
         // Display text
         val tv: TextView = findViewById(R.id.tv)
@@ -89,45 +105,41 @@ class MainActivity : AppCompatActivity() {
             val type0: String = typeTV.text.toString().toLowerCase()
             val pokemon0: String = pokeTV.text.toString().toLowerCase()
 
-            val call1: Call<Pokemon> = pokeApiService.getPokemon(pokemon0)
-            call1.enqueue(object : Callback<Pokemon> {
-                override fun onFailure(call: Call<Pokemon>?, t: Throwable?) {
-                    btn.progress = 0
-                    Toast.makeText(this@MainActivity, "Failed to find pokemon", Toast.LENGTH_SHORT).show()
-                }
+            val typeCall = pokeApiService.getType(type0)
+            val pokeCall = pokeApiService.getPokemon(pokemon0)
 
-                override fun onResponse(call: Call<Pokemon>?, response: Response<Pokemon>?) {
-                    val types = response?.body()?.types
-                    if (types == null) {
-                        btn.progress = 0
-                        Toast.makeText(this@MainActivity, "Failed to find pokemon", Toast.LENGTH_SHORT).show()
-                        return
-                    }
-
-                    val call2: Call<Type> = pokeApiService.getType(type0);
-                    call2.enqueue(object : Callback<Type> {
-                        override fun onFailure(call: Call<Type>?, t: Throwable?) {
-                            btn.progress = 0
-                            Toast.makeText(this@MainActivity, "Failed to find type", Toast.LENGTH_SHORT).show()
+            Observable.zip(typeCall, pokeCall,
+                    BiFunction<Type, Pokemon, Pair<Type, Pokemon>>
+                    { t: Type, p: Pokemon -> Pair(t, p) })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(object : Observer<Pair<Type, Pokemon>> {
+                        override fun onSubscribe(d: Disposable) {
+                            Log.d("TAG", "onSubscribe")
                         }
 
-                        override fun onResponse(call: Call<Type>?, response: Response<Type>?) {
-                            val dr = response?.body()?.damageRelations
-                            if (dr == null) {
-                                btn.progress = 0
-                                Toast.makeText(this@MainActivity, "Failed to find type", Toast.LENGTH_SHORT).show()
-                                return
-                            }
+                        override fun onError(e: Throwable) {
+                            Toast.makeText(this@MainActivity, "Search Failed", Toast.LENGTH_SHORT).show()
+                            btn.progress = 0
+                            Log.d("TAG", "Search failed")
+                        }
+
+                        override fun onComplete() {
+                            Log.d("TAG", "onComplete")
+                        }
+
+                        override fun onNext(t: Pair<Type, Pokemon>) {
+                            val (type, pokemon) = t
+                            val dr = type.damageRelations // damange relations
+                            val pt = pokemon.types // pokemon types
 
                             btn.progress = 100
-                            Handler().postDelayed ({
+                            Handler().postDelayed({
                                 btn.progress = 0
-                            }, 2000)
-
-                            // delay 3 seconds, then reset
+                            }, 2500)
 
                             var multiplier = 1.0
-                            types.forEach {
+                            pt.forEach {
                                 multiplier *= checkEffectiveness(dr, it)
                             }
 
@@ -143,12 +155,9 @@ class MainActivity : AppCompatActivity() {
                             } + " " + "$type0".capitalize()
 
                             tv.setText(tv.text.toString() + "$s \n")
+
                         }
                     })
-                }
-            })
         }
-
-
     }
 }

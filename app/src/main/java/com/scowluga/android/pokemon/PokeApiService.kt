@@ -13,8 +13,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
 
+// Provides access to Retrofit
 interface PokeApiService {
-    companion object {
+    companion object { // essentially static object
         fun create(): PokeApiService {
             val gson: Gson = GsonBuilder()
                     .setFieldNamingPolicy(

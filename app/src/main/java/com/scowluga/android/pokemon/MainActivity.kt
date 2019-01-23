@@ -19,8 +19,8 @@ import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
+    // Singleton design pattern
     val pokeApiService by lazy {
-        // Singleton design pattern
         PokeApiService.create()
     }
 
@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity() {
 
         typeTV.setAdapter(typeAdapter)
         typeTV.threshold = 1
-
 
         // Initializing Pokemon AutoComplete
         val pokeTV: TextInputAutoCompleteTextView = findViewById(R.id.atv2)
@@ -144,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             // Kotlin is great
-                            var s = "$pokemon0 ".capitalize() + when {
+                            val s = "$pokemon0 ".capitalize() + when {
                                 multiplier near 0.0 -> "is not affected by"
                                 multiplier near 0.25 -> "takes x1/4 damage from"
                                 multiplier near 0.5 -> "takes x1/2 damage from"
